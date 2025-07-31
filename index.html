@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caption Swap Game</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Arial', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            user-select: none;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .game-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .instructions {
+            background-color: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #1976d2;
+            font-size: 16px;
+        }
+        
+        .instructions strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .cartoons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .cartoon-box {
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        
+        .cartoon-box.correct {
+            border-color: #4CAF50;
+            background-color: #e8f5e9;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .cartoon-box.drag-over {
+            border-color: #2196F3;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .cartoon-image {
+            width: 100%;
+            height: 250px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            user-select: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        /* MODIFIED: Replaced :hover pseudo-class with a dedicated class */
+        .cartoon-image.image-zoomed {
+            transform: scale(1.33);
+            z-index: 10;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        .cartoon-image img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+        
+        .image-placeholder {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        
+        .image-placeholder h4 {
+            margin: 10px 0;
+            color: #444;
+            font-size: 18px;
+        }
+        
+        .caption-container {
+            min-height: 70px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+        
+        .caption-container:hover {
+            background-color: #e3f2fd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .caption-container.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        
+        .caption-text {
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .correct-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+        
+        .cartoon-box.correct .correct-indicator {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .shuffle-btn {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .shuffle-btn:hover {
+            background-color: #e68900;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .score {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .win-message {
+            display: none;
+            text-align: center;
+            font-size: 28px;
+            color: #4CAF50;
+            margin-top: 20px;
+            animation: celebrate 1s ease-in-out;
+        }
+        
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .swap-count {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔄 Cartoon Caption Swap Game 🔄</h1>
+    
+    <div class="game-container">
+        <div class="instructions">
+            <strong>How to Play:</strong>
+            All captions are in the wrong places! Each cartoon has multiple possible correct captions - the game randomly picks one.
+            Drag any caption to another cartoon to swap them. Keep swapping until every caption matches its cartoon. Think strategically - some swaps might temporarily make things worse!
+        </div>
+        
+        <div class="game-info">Playing with 6 random cartoons from the collection</div>
+        
+        <div class="cartoons-grid" id="cartoonsGrid"></div>
+        
+        <div class="score" id="scoreDisplay">Correct: 0 / 6</div>
+        <div class="swap-count" id="swapCount">Swaps: 0</div>
+        <div class="win-message" id="winMessage">🎉 Congratulations! All captions are correct! 🎉</div>
+        
+        <div class="controls">
+            <button class="shuffle-btn" id="shuffleBtn">New Game (Random 6)</button>
+        </div>
+    </div>
+    
+    <script>
+        // Caption data - populated from CSV (41 contests with 10 captions each)
+        const captionData = {
+            155: [
+                "Well, sure your divorce went better - you have all the lawyers.",
+                "I can't believe he's already 666.",
+                "I don't understand it. He usually has no trouble making enemies.",
+                "My kid's no angel either.",
+                "So much for eternal rest.",
+                "I said 'pray' date.",
+                "Children are a gift from... never mind.",
+                "I got soul custody.",
+                "Hard to believe they have the same mother.",
+                "You don't know evil till you've changed its diaper."
+            ],
+            156: [
+                "All I got was a cake and a card.",
+                "All the captioneers dance around the Lawrence Wood effigy, chanting their captions in hopes of being chosen.",
+                "They do this every April 16th.",
+                "Legend has it, he once fixed the paper jam in the copy machine.",
+                "Lord of the Files!",
+                "It's the Lord of the Files.",
+                "I think we missed a memo.",
+                "It's called Earning Man.",
+                "Another meeting that should have been an email.",
+                "I still think accountants are boring."
+            ],
+            157: [
+                "I'm still big in Japan.",
+                "I hurt a lot of people during my last twelve steps.",
+                "I crush Tokyo, no one says a word. But I light one Marlboro, I'm a monster.",
+                "I'll quit after one more Manhattan.",
+                "We're still big. It's the pictures that have gotten small.",
+                "The last time we tried twelve steps, we destroyed New York City.",
+                "The first step is admitting we hurt a lot of people.",
+                "I can't believe we still have to audition.",
+                "You ever step on a Lego store? Man, that hurts!",
+                "Can you believe they're making us audition?"
+            ],
+            158: [
+                "Don't stare. You'll look like a tourist.",
+                "These gender reveals are getting out of hand.",
+                "These gender reveals are getting out of hand.",
+                "I think I've had too many Manhattans.",
+                "Only drunks and tourists see it.",
+                "And that's why we're on this side of the street.",
+                "Am I hallucinating or are you really wearing yellow jeans?",
+                "I love this time of year when the elephants change colors.",
+                "Only the tourists want to talk about it.",
+                "That's one way to hose down 6,514 windows."
+            ],
+            159: [
+                "Round up the unusual suspects.",
+                "Run it under the macroscope.",
+                "We don't use the word 'giant', we say 'person of size'.",
+                "It gets worse. That's his pinky.",
+                "We'd better round up the unusual suspects.",
+                "The suspect remains at large.",
+                "Speaking of powder, we're out of donuts.",
+                "I wish we had more to go on.",
+                "Put a frame around it and let's call it a day.",
+                "Counterclockwise swirls. Clearly an Australian."
+            ],
+            160: [
+                "This is where I crash.",
+                "This is where I fall, asleep.",
+                "I'm an Indoorsman.",
+                "Don't expect breakfast in bed.",
+                "There's also a zip line to the bathroom.",
+                "It's a struggle to get out of bed some days.",
+                "The ladder was extra.",
+                "It was the only way to keep the dog off of the bed.",
+                "Remember to memorize your route before turning off the light.",
+                "And this is the guest room for people we don't like."
+            ],
+            161: [
+                "We are experiencing magical difficulties.",
+                "Looks like I'll need TWO volunteers.",
+                "I'm gonna need a ride home.",
+                "Is there a magician in the house?",
+                "If anyone is interested in adopting a rabbit, please see me after the show.",
+                "For my first trick, I will attempt to pull a tardy magician out of the cocktail lounge.",
+                "Is there a magician in the house.?",
+                "Is there a magician in the house?",
+                "He was my ride home.",
+                "No, but he is making a quart of vodka disappear."
+            ],
+            162: [
+                "They want to offer some destructive criticism.",
+                "This round of cuts will be brutal.",
+                "I'll be damned. They booked the conference room.",
+                "In all fairness, they did have the conference room reserved.",
+                "Who's going to tell them we booked the conference room first?",
+                "They're in acquisitions.",
+                "So that's three coffees, and two dozen Danish.",
+                "Just once, I wish we could have a civilized meeting.",
+                "Live by the sword, die by the audit.",
+                "Yes, it looks like they did reserve the conference room."
+            ],
+            163: [
+                "Try going through menopause.",
+                "Use your inside color.",
+                "This is why we can't have nice things.",
+                "This is why we can't have nice things.",
+                "Do not take that tone with me.",
+                "All I said was use a coaster.",
+                "Use your words.",
+                "I just hemmed those pants.",
+                "You paid $5, and they didn't even mention your entry?",
+                "It would be more incredible if you just took out the trash."
+            ],
+            164: [
+                "I'll get you a coaster.",
+                "They're teething.",
+                "This is why we can't have nice things.",
+                "I'm picking the next Airbnb.",
+                "We share the same taste in furniture.",
+                "I always feel so lazy around them.",
+                "Look, Todd, I'm done being subtle. We need to start having more sex.",
+                "Wait, I thought they were yours.",
+                "They're reclaiming the wood.",
+                "The furniture and I should be gone by the end of the month."
+            ],
+            165: [
+                "Set phasers to stub.",
+                "Set phasers to stub.",
+                "People of Earth, we have your missing socks.",
+                "We'll be fine. They're all on their phones.",
+                "We need to find their Achilles heel.",
+                "I can't believe we found parking.",
+                "If I'm not back in five minutes call for a spatula.",
+                "Leave it open, what are they going to take?",
+                "Relax -- they're glued to their phones.",
+                "Relax, our brains are bigger than theirs."
+            ],
+            166: [
+                "The seller is highly unmotivated.",
+                "You should pounce on this.",
+                "It comes with some strings attached.",
+                "This comes with a few strings attached.",
+                "I'd pounce if I were you.",
+                "The mortgage is fixed too.",
+                "There are no offers on the table. He knocked them on the ground.",
+                "The sellers have been indifferent to any offers.",
+                "The sellers are completely ignoring me.",
+                "The seller knocked our offer off the table."
+            ],
+            167: [
+                "I'm racking my brains.",
+                "I've racked my brains.",
+                "I change my mind a lot",
+                "See. No skeletons.",
+                "My sister got the looks.",
+                "Let's go now before I change my mind.",
+                "It's a woman's right to change her mind.",
+                "You're just jealous that I got all the brains in the family.",
+                "I think I can change your mind.",
+                "I got the brains of the family."
+            ],
+            168: [
+                "I hope history remembers this differently.",
+                "Whose half-assed idea was this?",
+                "The guy on the right is a real horse's ass.",
+                "You could've just knocked.",
+                "Frankly, we expected more of you.",
+                "Get your act together; no more half-assed invasions.",
+                "Which one of you is Jack and which one is Ass?",
+                "So which of the three of you is the brains of the operation?",
+                "You both made a huge ass of yourselves.",
+                "Now let's rehearse what you'll tell Homer."
+            ],
+            169: [
+                "This is not the first time I have been asked to speak.",
+                "Before we begin tonight's program, let me point out that there are fire hydrants located on both the north and south sides of the building.",
+                "These were the best 28 years of my life.",
+                "Please hold your tail wagging until the end.",
+                "Please silence your squeaky toys.",
+                "When I call your name, please fetch your diploma.",
+                "Never stop chasing your dreams and tails.",
+                "I urge you all to pursue your masters.",
+                "It's time to fetch your diploma.",
+                "Go put your mark on the world."
+            ],
+            170: [
+                "I think she's had some work done.",
+                "It's just a façade.",
+                "So, how's life in the big city?",
+                "Too much foundation.",
+                "She's had work.",
+                "Since when do you wear foundation?",
+                "Looks like someone got plastered last night.",
+                "A smart move — wildlife is at risk but real estate keeps its value.",
+                "It's all a façade.",
+                "She's had work done."
+            ],
+            171: [
+                "Here's one more song before I throw in the towel.",
+                "Feel free to throw your panties.",
+                "Welcome to my mom's basement.",
+                "We're gonna entertain you for exactly the next 30 minutes",
+                "To think we started in my mom's basement.",
+                "All panties thrown on stage will be fluffed and folded.",
+                "Thanks, folks, my timer is up.",
+                "Your mama don't wash and your daddy don't fluff and fold",
+                "The next one is for the sock that got away.",
+                "After this, I'll throw in the towels."
+            ],
+            172: [
+                "We're off to see the coroner.",
+                "I have a feeling we're not in network anymore.",
+                "I'm afraid it's his last straw.",
+                "There's no easy way to say this, so we'll have to sing and dance.",
+                "They're not out of the woods yet.",
+                "I'm a doctor, not a wizard.",
+                "Why couldn't we save him? Because because because because because...",
+                "Let me begin by saying ding dong.",
+                "There's nothing we could do. A house fell on her.",
+                "We're off to meet your deductible."
+            ],
+            173: [
+                "I'll have it to you by end of days.",
+                "Boss wants it done by the end of days.",
+                "They denied my request for eternity leave.",
+                "I take a day off and all hell breaks loose.",
+                "I want to quit, but I'm waiting for a sign.",
+                "I think your popcorn is done.",
+                "I shouldn't have clicked on that link.",
+                "Have you tried unplugging it and plugging it back in?",
+                "Our firewall might be outdated.",
+                "It's my last day."
+            ],
+            174: [
+                "You're making me uncomfortable.",
+                "Let me sleep on it.",
+                "I'm just browsing.",
+                "Let me sleep on it.",
+                "I don't need any help, but the dog could use a walk.",
+                "You said I should make myself at home.",
+                "You sell them your way, I'll sell them my way.",
+                "I'd like to try the first one again.",
+                "Great mattress. I just ordered it from Amazon.",
+                "There's one more thing I need to try, but you'll want to look away."
+            ],
+            175: [
+                "Somebody call me a stroller.",
+                "I need a change.",
+                "Leave the bottle.",
+                "And then she just pushed me out.",
+                "I can't just crawl back to her.",
+                "I've been cooped up inside for nine months.",
+                "Leave the bottle.",
+                "I fell off the wagon.",
+                "It's 5 A.M. somewhere.",
+                "I'll have to crawl out of here."
+            ],
+            176: [
+                "I give it two opposable thumbs down.",
+                "I hope the actor's strike is over soon.",
+                "It smells like they need a Macbath.",
+                "No I mean it actually literally stinks.",
+                "Just wait until the nit-picking begins.",
+                "They're 98.7% there.",
+                "They're trained, just not classically.",
+                "The sign says they tend to act out.",
+                "I can see why he's won three Darwin Awards.",
+                "First time at the Los Angeles Zoo?"
+            ],
+            177: [
+                "You may step down, and across.",
+                "The witness may step down and to the right.",
+                "Stop wasting time. It took the judge all day to get here.",
+                "Is this just a game to you?",
+                "Your Honor, may I approach the bench diagonally?",
+                "I need two moves to approach the witness.",
+                "Permission to approach the witness in two moves?",
+                "Don't sidestep the question.",
+                "Tell us about your checkered past.",
+                "Your Honor, please advise the witness to quit sidestepping the questions."
+            ],
+            178: [
+                "Shall I put it in your box?",
+                "Truthfully, I'm not seeing it either.",
+                "They'll never know what bit them.",
+                "If looks could kill.",
+                "If looks could kill.",
+                "Can you see yourself wearing this?",
+                "How many lifetime guarantees do you need?",
+                "Take your time—you're my last customer.",
+                "I hesitate to ask the occasion.",
+                "Perhaps you need some time to reflect."
+            ],
+            179: [
+                "I no longer believe in us.",
+                "I can see why no one believes in you.",
+                "Well, I don't believe in you either.",
+                "I don't believe in you either.",
+                "Let's walk into a bar.",
+                "At least the frog had potential.",
+                "I should've kissed the frog.",
+                "Have we lost our sparkle?",
+                "Glitter doesn't vacuum itself.",
+                "You are unbelievable."
+            ],
+            180: [
+                "I twisted my last opponent into a poodle.",
+                "I'm gonna twist you like a balloon animal.",
+                "Now for the punchline.",
+                "This is gonna tickle.",
+                "Let's make this quick. I've got fourteen guys waiting in a car.",
+                "No tickling below the belt.",
+                "I always get the last laugh.",
+                "Try honking it again.",
+                "Hit me with your best punchline!",
+                "Prepare to die laughing."
+            ],
+            181: [
+                "On top of everything, I also tested positive for salmonella.",
+                "Do your own stunts.",
+                "Let's just say I'm not Grade A anymore.",
+                "I should have let the chicken go first.",
+                "I hit the ground runny.",
+                "My phone was on vibrate.",
+                "At least I got laid before I cracked.",
+                "You should see the rest of the carton.",
+                "I quit. Do your own stunts.",
+                "My career is now French toast."
+            ],
+            182: [
+                "How will I explain this to my wife?",
+                "Let's go back to passive aggression.",
+                "But enough about me.",
+                "You make three very strong points.",
+                "Point taken.",
+                "Enough about me.",
+                "Point taken.",
+                "You really know how to hurt a guy.",
+                "I get your points.",
+                "I'm still hoping for makeup sex."
+            ],
+            183: [
+                "First tell me why the position is vacant.",
+                "And give up all this?",
+                "Next time you ding my car, just leave a note.",
+                "I'm just here for the bed and bath part.",
+                "And all I have to do is give you my credit card info?",
+                "At least someone appreciates my shoplifting.",
+                "I always thought I'd be going to hell in a hand basket.",
+                "Only if I'm in charge of the thermostat.",
+                "You're melting my ice cream.",
+                "I'm not ready to settle that far down."
+            ],
+            184: [
+                "This one's too wet.",
+                "You can afford a hot tub yet you're still eating porridge?",
+                "Shouldn't there technically be three hot tubs?",
+                "Well, my last visit didn't exactly end on a relaxing note.",
+                "I should warn you, I also mark my territory.",
+                "Until you showed up, it was just right.",
+                "Breaking and entering takes a toll on the joints.",
+                "Tell me I'm not in hot water.",
+                "You would just be the three bears if it weren't for me.",
+                "Why do you only have one hot tub?"
+            ],
+            185: [
+                "His art always takes me by surprise.",
+                "This one also lacks depth.",
+                "I call these 'The Last Supper.'",
+                "Great art is supposed to make you uncomfortable.",
+                "This one really pulls you in.",
+                "And this is how I landed a trophy wife.",
+                "This one really caught my eye.",
+                "Behold: 'The Last Supper.'",
+                "I could gaze at it for seconds.",
+                "I'm looking for something more tasteful."
+            ],
+            186: [
+                "That was some gust of wind.",
+                "Stop defoliating me with your eyes.",
+                "Wanna take off that fig leaf and raise a little Cain",
+                "Looks like someone's ready to sin again.",
+                "My last boyfriend had two leaves.",
+                "It's from the fall-of-man collection.",
+                "I want you to covet me for my wisdom.",
+                "Couldn't decide, so I wore them all.",
+                "I'll lead you not into temptation.",
+                "That outfit is the real original sin."
+            ],
+            187: [
+                "This one's called get the f@$k off the counter.",
+                "Let's take it from scratch.",
+                "This next one is called 'Straight Outta Catnip.'",
+                "Let's bring in the strings.",
+                "When you're a star, they let you grab 'em.",
+                "You'll know it when you hear it.",
+                "We're ready to lay down the scratch track.",
+                "I'm trying to give a softer image to gangsta rap.",
+                "This one's about fighting with bitches.",
+                "He's inspired by the time he spent on the streets."
+            ],
+            188: [
+                "I really WAS a good boy.",
+                "I bet you thought I was just playing dead.",
+                "I finally learned how to play dead.",
+                "I've come to fetch you.",
+                "Great news. I caught the car.",
+                "We'll be playing fetch, sooner than you think.",
+                "They'd fun, but I'd rather have testicles.",
+                "I'd like to request permission to land on the couch.",
+                "Wanna watch a mailman lose his mind?",
+                "I just scared the shit out of the mailman."
+            ],
+            189: [
+                "So, you want the warm hand or the cold hand?",
+                "During the procedure, we'll both be numb.",
+                "We'll both be lightly sedated for this procedure.",
+                "I'm gonna give it to you straight up.",
+                "It's not nearly as addictive as what I prescribed you.",
+                "It's benign, but I want to keep an eye on it until my gambling debts are paid off.",
+                "I'm going to take two aspirin and call you in the morning.",
+                "No—but I have a liquor license.",
+                "I wish they wouldn't schedule these 5 o'clock appointments."
+            ],
+            190: [
+                "I think we'll skip the breath test.",
+                "Have you been drinking from the toilet?",
+                "Been drinking from the toilet this evening, sir?",
+                "Please put the car in P-A-R-K.",
+                "Have you been drinking from the toilet?",
+                "I don't care how fast the squirrel was going.",
+                "It means you have to come to a complete stay.",
+                "I hate this job. Even my own dog isn't happy to see me.",
+                "Can I not smell your breath please?",
+                "Don't worry, it's the car that's being impounded."
+            ],
+            191: [
+                "You knew my money was fake when you married me.",
+                "Of course the house is a dump, we're on Baltic Avenue.",
+                "It hurts when you say I've never made any real money.",
+                "Go directly to hell.",
+                "You knew I was a player when you married me.",
+                "Second place in a beauty contest isn't much to brag about.",
+                "When I was in jail, you never visited me once.",
+                "I'm thinking about adding tariffs to the game",
+                "Advance to Kitchen. Collect Snack and Beverage",
+                "Could you advance to the kitchen and collect me a beer?"
+            ],
+            192: [
+                "I'm afraid my best lives are behind me.",
+                "I'm worried that I'm starting to care.",
+                "I only slept 20 hours yesterday.",
+                "We've barely scratched the surface.",
+                "I'm having trouble sleeping 22 hours a day.",
+                "What if the red dot is never meant to be caught?",
+                "I wonder if I'm making the most of the four hours I'm awake.",
+                "They always tell him he's a good boy.",
+                "I hope Bob Mankoff has recovered from his health issues.",
+                "What am I doing with my lives?"
+            ],
+            193: [
+                "Have you tried putting it in reverse?",
+                "Look — some moron's composting a Buick.",
+                "Did you tip the delivery guy?",
+                "You really drove that car into the ground.",
+                "She'll do anything to avoid parallel parking.",
+                "Well, it could have been worse. We could have left our lunch in the car.",
+                "This works much better than speed bumps.",
+                "Dinner's on me if you tell my wife you were driving.",
+                "The realtor did say there was \"underground parking.\"",
+                "Bummer about the chips and drinks. And Todd."
+            ],
+            194: [
+                "First you worry they're coming for you. Then you worry they're not.",
+                "Every dog has his day. Mine was last Thursday.",
+                "It's not the heat, it's the humiliation.",
+                "After the fourth or fifth beer, I start to look better.",
+                "They'll eat pretty ones like you for lunch.",
+                "I'm beyond fixings.",
+                "The bottom of the ninth comes for us all.",
+                "How long have I been asleep?",
+                "Kid, we don't expire. We just become jerky.",
+                "What are you in for?"
+            ],
+            195: [
+                "You're getting a little carried away with the neighborhood watch.",
+                "They're not pajamas if you believe in yourself.",
+                "Why can't you buy a Corvette and have an affair like other men your age?",
+                "Saving any files today?",
+                "At this point, I'd settle for \"Takes Out the Trash Man.\"",
+                "Most guys just buy a sports car.",
+                "With great power comes great responsibility. Take out the trash.",
+                "Are you saving someone else?",
+                "Your mother needs help with her computer again.",
+                "You have a secret identity? Thank God."
+            ]
+        };
+        
+        // Game metadata - simplified to only include necessary fields
+        const cartoonMetadata = [
+            { id: 1, contestNumber: 155, imageFile: "155.jpg" },
+            { id: 2, contestNumber: 156, imageFile: "156.jpg" },
+            { id: 3, contestNumber: 157, imageFile: "157.jpg" },
+            { id: 4, contestNumber: 158, imageFile: "158.jpg" },
+            { id: 5, contestNumber: 159, imageFile: "159.jpg" },
+            { id: 6, contestNumber: 160, imageFile: "160.jpg" },
+            { id: 7, contestNumber: 161, imageFile: "161.jpg" },
+            { id: 8, contestNumber: 162, imageFile: "162.jpg" },
+            { id: 9, contestNumber: 163, imageFile: "163.jpg" },
+            { id: 10, contestNumber: 164, imageFile: "164.jpg" },
+            { id: 11, contestNumber: 165, imageFile: "165.jpg" },
+            { id: 12, contestNumber: 166, imageFile: "166.jpg" },
+            { id: 13, contestNumber: 167, imageFile: "167.jpg" },
+            { id: 14, contestNumber: 168, imageFile: "168.jpg" },
+            { id: 15, contestNumber: 169, imageFile: "169.jpg" },
+            { id: 16, contestNumber: 170, imageFile: "170.jpg" },
+            { id: 17, contestNumber: 171, imageFile: "171.jpg" },
+            { id: 18, contestNumber: 172, imageFile: "172.jpg" },
+            { id: 19, contestNumber: 173, imageFile: "173.jpg" },
+            { id: 20, contestNumber: 174, imageFile: "174.jpg" },
+            { id: 21, contestNumber: 175, imageFile: "175.jpg" },
+            { id: 22, contestNumber: 176, imageFile: "176.jpg" },
+            { id: 23, contestNumber: 177, imageFile: "177.jpg" },
+            { id: 24, contestNumber: 178, imageFile: "178.jpg" },
+            { id: 25, contestNumber: 179, imageFile: "179.jpg" },
+            { id: 26, contestNumber: 180, imageFile: "180.jpg" },
+            { id: 27, contestNumber: 181, imageFile: "181.jpg" },
+            { id: 28, contestNumber: 182, imageFile: "182.jpg" },
+            { id: 29, contestNumber: 183, imageFile: "183.jpg" },
+            { id: 30, contestNumber: 184, imageFile: "184.jpg" },
+            { id: 31, contestNumber: 185, imageFile: "185.jpg" },
+            { id: 32, contestNumber: 186, imageFile: "186.jpg" },
+            { id: 33, contestNumber: 187, imageFile: "187.jpg" },
+            { id: 34, contestNumber: 188, imageFile: "188.jpg" },
+            { id: 35, contestNumber: 189, imageFile: "189.jpg" },
+            { id: 36, contestNumber: 190, imageFile: "190.jpg" },
+            { id: 37, contestNumber: 191, imageFile: "191.jpg" },
+            { id: 38, contestNumber: 192, imageFile: "192.jpg" },
+            { id: 39, contestNumber: 193, imageFile: "193.jpg" },
+            { id: 40, contestNumber: 194, imageFile: "194.jpg" },
+            { id: 41, contestNumber: 195, imageFile: "195.jpg" }
+        ];
+        
+        // Fisher-Yates shuffle algorithm
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Function to select random cartoons and their correct captions
+        function getRandomGameData(count) {
+            const shuffledMetadata = [...cartoonMetadata];
+            shuffleArray(shuffledMetadata);
+            const selectedCartoons = shuffledMetadata.slice(0, count);
+            
+            const gameData = [];
+            for (const metadata of selectedCartoons) {
+                const contestNum = metadata.contestNumber;
+                const possibleCaptions = captionData[contestNum];
+                const chosenCorrectCaption = possibleCaptions[Math.floor(Math.random() * possibleCaptions.length)];
+                
+                gameData.push({
+                    id: metadata.id,
+                    contestNumber: contestNum,
+                    imageFile: metadata.imageFile,
+                    correctCaption: chosenCorrectCaption,
+                    currentCaption: "",
+                    isCorrect: false
+                });
+            }
+            return gameData;
+        }
+
+        // Function to ensure all captions are initially misplaced (deranged)
+        function derangeCaptions(cartoons) {
+            const originalCorrectCaptions = cartoons.map(c => c.correctCaption);
+            const captionsToAssign = [...originalCorrectCaptions]; 
+            shuffleArray(captionsToAssign);
+
+            let fixedPointsExist = true;
+            let attempts = 0;
+            const MAX_DERANGE_ATTEMPTS = 20; 
+
+            while (fixedPointsExist && attempts < MAX_DERANGE_ATTEMPTS) {
+                fixedPointsExist = false;
+                for (let i = 0; i < cartoons.length; i++) {
+                    if (captionsToAssign[i] === originalCorrectCaptions[i]) {
+                        fixedPointsExist = true; 
+                        let swapIndex = -1;
+
+                        for (let j = 0; j < cartoons.length; j++) {
+                            if (j !== i && captionsToAssign[j] !== originalCorrectCaptions[j]) {
+                                if (captionsToAssign[i] !== originalCorrectCaptions[j] && captionsToAssign[j] !== originalCorrectCaptions[i]) {
+                                    swapIndex = j;
+                                    break; 
+                                }
+                            }
+                        }
+
+                        if (swapIndex === -1) {
+                            swapIndex = (i + 1) % cartoons.length;
+                            if (cartoons.length > 1 && swapIndex === i) { 
+                                swapIndex = (i + cartoons.length - 1) % cartoons.length;
+                            }
+                        }
+                        
+                        [captionsToAssign[i], captionsToAssign[swapIndex]] = [captionsToAssign[swapIndex], captionsToAssign[i]];
+                        
+                        break; 
+                    }
+                }
+                attempts++;
+            }
+
+            for (let i = 0; i < cartoons.length; i++) {
+                cartoons[i].currentCaption = captionsToAssign[i];
+            }
+        }
+
+
+        let gameCartoons = [];
+        let swappedCaptionElement = null;
+        let swapCount = 0;
+
+        function initGame() {
+            gameCartoons = getRandomGameData(6);
+            derangeCaptions(gameCartoons);
+
+            const cartoonsGrid = document.getElementById('cartoonsGrid');
+            cartoonsGrid.innerHTML = '';
+
+            gameCartoons.forEach((cartoon, index) => {
+                const cartoonBox = document.createElement('div');
+                cartoonBox.classList.add('cartoon-box');
+                cartoonBox.setAttribute('data-index', index); 
+
+                const cartoonImageDiv = document.createElement('div');
+                cartoonImageDiv.classList.add('cartoon-image');
+                if (cartoon.imageFile) {
+                    const img = document.createElement('img');
+                    img.src = `${cartoon.imageFile}`; 
+                    img.alt = `Cartoon ${cartoon.contestNumber}`;
+                    cartoonImageDiv.appendChild(img);
+                } else {
+                    cartoonImageDiv.innerHTML = `<div class="image-placeholder"><h4>Image Missing</h4><p>Contest #${cartoon.contestNumber}</p></div>`;
+                }
+                
+                // ADDED: Event listeners for manual hover control
+                cartoonImageDiv.addEventListener('mouseenter', handleImageHoverStart);
+                cartoonImageDiv.addEventListener('mouseleave', handleImageHoverEnd);
+                
+                cartoonBox.appendChild(cartoonImageDiv);
+
+                const captionContainer = document.createElement('div');
+                captionContainer.classList.add('caption-container');
+                captionContainer.setAttribute('draggable', true);
+                captionContainer.setAttribute('data-target-index', index); 
+                
+                const captionText = document.createElement('p');
+                captionText.classList.add('caption-text');
+                captionText.textContent = cartoon.currentCaption;
+                captionContainer.appendChild(captionText);
+                cartoonBox.appendChild(captionContainer);
+
+                const correctIndicator = document.createElement('div');
+                correctIndicator.classList.add('correct-indicator');
+                correctIndicator.textContent = '✔';
+                cartoonBox.appendChild(correctIndicator);
+                cartoonsGrid.appendChild(cartoonBox);
+
+                captionContainer.addEventListener('dragstart', handleDragStart);
+                captionContainer.addEventListener('dragenter', handleDragEnter);
+                captionContainer.addEventListener('dragleave', handleDragLeave);
+                captionContainer.addEventListener('dragover', handleDragOver);
+                captionContainer.addEventListener('drop', handleDrop);
+                captionContainer.addEventListener('dragend', handleDragEnd);
+            });
+
+            swapCount = 0;
+            document.getElementById('swapCount').textContent = `Swaps: ${swapCount}`;
+            document.getElementById('winMessage').style.display = 'none';
+            updateScoreDisplay(); 
+        }
+
+        function shuffleGame() {
+            initGame();
+        }
+
+        // --- Image Hover Handlers ---
+        
+        function handleImageHoverStart(e) {
+            this.classList.add('image-zoomed');
+        }
+        
+        function handleImageHoverEnd(e) {
+            this.classList.remove('image-zoomed');
+        }
+
+        // --- Drag and Drop Handlers ---
+
+        function handleDragStart(e) {
+            swappedCaptionElement = this;
+            e.dataTransfer.setData('text/plain', this.dataset.targetIndex);
+            this.classList.add('dragging');
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            if (this !== swappedCaptionElement) {
+                this.closest('.cartoon-box').classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.closest('.cartoon-box').classList.remove('drag-over');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            if (this !== swappedCaptionElement) {
+                this.closest('.cartoon-box').classList.add('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.closest('.cartoon-box').classList.remove('drag-over');
+
+            if (this === swappedCaptionElement) {
+                return;
+            }
+
+            const draggedCaptionIndex = parseInt(e.dataTransfer.getData('text/plain'));
+            const targetCaptionElement = this;
+            const targetCartoonIndex = parseInt(targetCaptionElement.dataset.targetIndex);
+
+            const draggedCaptionElement = swappedCaptionElement; 
+
+            const draggedCartoon = gameCartoons[draggedCaptionIndex];
+            const targetCartoon = gameCartoons[targetCartoonIndex];
+
+            // Swap captions visually in the DOM
+            const tempText = draggedCaptionElement.querySelector('.caption-text').textContent;
+            draggedCaptionElement.querySelector('.caption-text').textContent = targetCaptionElement.querySelector('.caption-text').textContent;
+            targetCaptionElement.querySelector('.caption-text').textContent = tempText;
+
+            // Swap captions in our gameCartoons data model
+            const tempCaptionData = draggedCartoon.currentCaption;
+            draggedCartoon.currentCaption = targetCartoon.currentCaption;
+            targetCartoon.currentCaption = tempCaptionData;
+
+            swapCount++;
+            document.getElementById('swapCount').textContent = `Swaps: ${swapCount}`;
+
+            updateScoreDisplay();
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            
+            // Failsafe cleanup for all visual states
+            document.querySelectorAll('.cartoon-box.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            
+            // ADDED: Failsafe to remove any "stuck" zoom classes
+            document.querySelectorAll('.cartoon-image.image-zoomed').forEach(el => {
+                el.classList.remove('image-zoomed');
+            });
+            
+            swappedCaptionElement = null;
+        }
+
+        // --- Game State Update Functions ---
+
+        function updateScoreDisplay() {
+            let correctCount = 0;
+            gameCartoons.forEach((cartoon, index) => {
+                const isCorrect = (cartoon.currentCaption === cartoon.correctCaption);
+                cartoon.isCorrect = isCorrect;
+
+                const cartoonBox = document.querySelector(`.cartoon-box[data-index="${index}"]`);
+                if (isCorrect) {
+                    cartoonBox.classList.add('correct');
+                } else {
+                    cartoonBox.classList.remove('correct');
+                }
+
+                if (isCorrect) {
+                    correctCount++;
+                }
+            });
+
+            document.getElementById('scoreDisplay').textContent = `Correct: ${correctCount} / ${gameCartoons.length}`;
+
+            if (correctCount === gameCartoons.length) {
+                document.getElementById('winMessage').style.display = 'block';
+            } else {
+                document.getElementById('winMessage').style.display = 'none';
+            }
+        }
+
+        // Initial game setup
+        document.addEventListener('DOMContentLoaded', initGame);
+        document.getElementById('shuffleBtn').addEventListener('click', shuffleGame);
+    </script>
+</body>
+</html>
